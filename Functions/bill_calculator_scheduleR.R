@@ -1,10 +1,11 @@
 
-bill_calculator_scheduleR <- function(customer_charge_dollars, demand_response_adjustment_clause_cents,
-                                      dsm_adjustment_cents, ecrf_cents, green_infrastructure_fee_dollars,
-                                      nonfuel_fuel_energy_block1_charge_cents, nonfuel_fuel_energy_block2_charge_cents, nonfuel_fuel_energy_block3_charge_cents,
-                                      nonfuel_fuel_energy_block1_qtyKwh, nonfuel_fuel_energy_block2_qtyKwh,
-                                      pbf_surcharge_cents, purchase_power_adjustment_cents, rba_rate_adjustment_cents,
-                                      kwh){
+bill_calculator_scheduleR <-
+  function(customer_charge_dollars, demand_response_adjustment_clause_cents,
+           dsm_adjustment_cents, ecrf_cents, green_infrastructure_fee_dollars,
+           nonfuel_fuel_energy_block1_charge_cents, nonfuel_fuel_energy_block2_charge_cents,
+           nonfuel_fuel_energy_block3_charge_cents, nonfuel_fuel_energy_block1_qtyKwh,
+           nonfuel_fuel_energy_block2_qtyKwh, pbf_surcharge_cents,
+           purchase_power_adjustment_cents, rba_rate_adjustment_cents, kwh){
   
   # bill will be broken up into fixed and variable charges
   
