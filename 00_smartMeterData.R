@@ -61,7 +61,8 @@ mcHeco = mcHeco2[,c("date_time","mc")]
 heco = merge(heco, mcHeco, by="date_time")
 
 # correct an apparent inconsistency in FERC data pre/post 1/1/2013
-heco$date_time[years(heco$date_time<=2012)] <- heco$date_time[years(heco$date_time<=2012)] + hours(1)
+heco$date_time[years(heco$date_time<=2012)] <-
+  heco$date_time[years(heco$date_time<=2012)] + hours(1)
 
 # assign missing values to zeros
 heco$load[heco$load==0] <- NA
@@ -136,7 +137,8 @@ text(4,93, "Marginal Cost", col="blue")
 library(tidyverse)
 library(tidycensus)
 library(viridis)
-census_api_key( key = "5d0dbe99ab82cd592b819a8c8b2776453af7c3e6", install=TRUE, overwrite = TRUE)
+census_api_key( key = "5d0dbe99ab82cd592b819a8c8b2776453af7c3e6", install=TRUE,
+                overwrite = TRUE)
 
 hiinc <- get_acs(geography = "tract", variables = "B19013_001",
                 state = "HI", county = "Honolulu", geometry = TRUE)
