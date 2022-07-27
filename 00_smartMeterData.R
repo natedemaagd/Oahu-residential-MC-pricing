@@ -155,4 +155,4 @@ hiinc$census_tract = ct
 
 
 # save data
-save.image(file = 'D:/OneDrive - hawaii.edu/Documents/Projects/HECO/Data/Output/00_smartMeterData.R')
+save.image(file = 'D:/OneDrive - hawaii.edu/Documents/Projects/HECO/Data/Output/Residential/00_smartMeterData.R')

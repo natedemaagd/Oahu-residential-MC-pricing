@@ -7,7 +7,7 @@ library(readxl); library(ggplot2); library(lubridate)
 ##### load and format data #####
 
 # load residential bill calculation function 
-source("D:/OneDrive - hawaii.edu/Documents/Projects/HECO/Code/Functions/bill_calculator_scheduleR.R")
+source("D:/OneDrive - hawaii.edu/Documents/Projects/HECO/Code/Oahu-residential-MC-pricing/Functions/bill_calculator_scheduleR.R")
 
 # test Jan 2020 500 kWh example from HECO: attachment 7 from https://www.hawaiianelectric.com/documents/billing_and_payment/rates/energy_cost_adjustment_filings/oahu/2020/oahu_ecrc_2020_01.pdf
 bill_calculator_scheduleR(customer_charge_dollars = 11.50,
@@ -25,18 +25,25 @@ bill_calculator_scheduleR(customer_charge_dollars = 11.50,
                           rba_rate_adjustment_cents = 0.9376,
                           kwh = 500)
 
-# load schedule R (residential) rate data
+# load schedule R (residential) rate data, and rates shared by all schedules. Combine into one list.
 rate_data_names <- list.files('D:/OneDrive - hawaii.edu/Documents/Projects/HECO/Data/Raw/HECO/Rate_Data/schedule_r',
+                              pattern = '.xlsx')
+rate_data_names2 <- list.files('D:/OneDrive - hawaii.edu/Documents/Projects/HECO/Data/Raw/HECO/Rate_Data/all_schedules',
                               pattern = '.xlsx')
 rate_data <- lapply(rate_data_names,
                     function(x) as.data.frame(read_xlsx(paste0('D:/OneDrive - hawaii.edu/Documents/Projects/HECO/Data/Raw/HECO/Rate_Data/schedule_r/',
                                                                x))))
+rate_data2 <- lapply(rate_data_names2,
+                    function(x) as.data.frame(read_xlsx(paste0('D:/OneDrive - hawaii.edu/Documents/Projects/HECO/Data/Raw/HECO/Rate_Data/all_schedules/',
+                                                               x))))
+rate_data_names <- c(rate_data_names, rate_data_names2); rm(rate_data_names2)
+rate_data <- c(rate_data, rate_data2); rm(rate_data2)
 rate_data_names <- sapply(rate_data_names, function(s) substr(s, 1, nchar(s)-5))
 names(rate_data) <- rate_data_names
 rm(rate_data_names)
 
 # load billing data and keep only schedule R customers
-monthly_consumption <- readRDS("D:/OneDrive - hawaii.edu/Documents/Projects/HECO/Data/Output/01a_schedule_R_kwh_monthly_aggregation.rds")
+monthly_consumption <- readRDS("D:/OneDrive - hawaii.edu/Documents/Projects/HECO/Data/Output/Residential/01a_schedule_R_kwh_monthly_aggregation.rds")
 monthly_consumption <- monthly_consumption[monthly_consumption$RATE == 'R',]
 monthly_consumption$YearMonth <- as.Date(paste(monthly_consumption$year,
                                                monthly_consumption$month, '15',
@@ -131,7 +138,7 @@ for(i in 1:nrow(monthly_consumption)){
                               ecrf_cents =
                                 rate_data$ecrf[rate_data$ecrf$year == monthly_consumption$year[[i]] &
                                                  rate_data$ecrf$month == monthly_consumption$month[[i]],
-                                               'cents_per_kwh'],
+                                               'final_cents_per_kwh'],
                               green_infrastructure_fee_dollars =
                                 rate_data$green_infrastructure_fee[rate_data$green_infrastructure_fee$year == monthly_consumption$year[[i]] &
                                                                      rate_data$green_infrastructure_fee$month == monthly_consumption$month[[i]],
@@ -148,6 +155,7 @@ for(i in 1:nrow(monthly_consumption)){
                                 rate_data$nonfuel_fuel_energy_charge[rate_data$nonfuel_fuel_energy_charge$year == monthly_consumption$year[[i]] &
                                                                        rate_data$nonfuel_fuel_energy_charge$month == monthly_consumption$month[[i]],
                                                                      'cents_per_kwh_over1200'],
+                              nonfuel_fuel_energy_block1_qtyKwh =  350,
                               nonfuel_fuel_energy_block2_qtyKwh = 1200,
                               pbf_surcharge_cents =
                                 rate_data$pbf_surcharge[rate_data$pbf_surcharge$year == monthly_consumption$year[[i]] &
@@ -188,4 +196,4 @@ aggregate(monthly_consumption_median$bill_dollars,
 
 
 # save data
-saveRDS(monthly_consumption, file = "D:/OneDrive - hawaii.edu/Documents/Projects/HECO/Data/Output/01c_schedule_R_bill_calculations_currentBlock.rds")
+saveRDS(monthly_consumption, file = "D:/OneDrive - hawaii.edu/Documents/Projects/HECO/Data/Output/Residential/01c_schedule_R_bill_calculations_currentBlock.rds")

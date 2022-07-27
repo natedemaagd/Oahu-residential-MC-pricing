@@ -2,7 +2,7 @@
 library(data.table); library(lubridate)
 
 # load data
-load("D:/OneDrive - hawaii.edu/Documents/Projects/HECO/Data/Output/00_smartMeterData.R")
+load("D:/OneDrive - hawaii.edu/Documents/Projects/HECO/Data/Output/Residential/00_smartMeterData.R")
 
 # keep only schedule R customers (residential)
 z <- z[z$RATE == 'R',]
@@ -34,4 +34,11 @@ monthly_consumption <- merge(monthly_consumption, id_chars, 'ID')
 
 rm(monthly_cost, monthly_kwh)
 
-saveRDS(monthly_consumption, file = "D:/OneDrive - hawaii.edu/Documents/Projects/HECO/Data/Output/01c_schedule_R_bill_calculations_marginalCost.rds")
+# add census tract
+dat_censusTract <- z[!duplicated(z$ID), c('ID', 'CENSUS_TRACT')]
+monthly_consumption <- left_join(monthly_consumption,
+                                 dat_censusTract,
+                                 'ID')
+rm(dat_censusTract)
+
+saveRDS(monthly_consumption, file = "D:/OneDrive - hawaii.edu/Documents/Projects/HECO/Data/Output/Residential/01c_schedule_R_bill_calculations_marginalCharge.rds")
