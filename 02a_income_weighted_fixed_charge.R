@@ -5,7 +5,7 @@
 # these weights.
 
 library(xlsx); library(tidyverse); library(ggplot2); library(scales)
-library(ggpubr)
+library(ggpubr); library(grid); library(gridExtra)
 
 
 
@@ -92,8 +92,12 @@ dat_bills$`Has PV?` <- factor(dat_bills$`Has PV?`, levels = c('Yes', 'No'))
 
 # plot monthly income-based fixed charge
 plotdat <- dat_bills[!duplicated(dat_bills$ID),]
-aggregate(plotdat$monthlyFixedCharge_incomeWeighted,
-          list(plotdat$PV), summary)
+bill_currentTariff <- textGrob(round(unique(plotdat$monthlyFixedCharge), 2),
+                               gp = gpar(col = 'black', fontface="bold"))
+bill_McPv0 <- textGrob(round(mean(dat_bills$monthlyFixedCharge_incomeWeighted[dat_bills$PV == 0]), 2),
+                       gp = gpar(col = lineColors[[1]], fontface="bold"))
+bill_McPv1 <- textGrob(round(mean(dat_bills$monthlyFixedCharge_incomeWeighted[dat_bills$PV == 1]), 2),
+                       gp = gpar(col = lineColors[[2]], fontface="bold"))
 ggplot(data = plotdat,
        aes(monthlyFixedCharge_incomeWeighted, fill = `Has PV?`)) +
   geom_histogram(alpha = 0.2, bins = 10) +
@@ -104,43 +108,87 @@ ggplot(data = plotdat,
              linetype = 'longdash', size = 0.8, color = lineColors) +
   labs(x = 'Income-weighted fixed charge ($/month)',
        y = 'Number of households') +
+  annotation_custom(bill_currentTariff,
+                    xmin = unique(plotdat$monthlyFixedCharge) + 2,
+                    xmax = unique(plotdat$monthlyFixedCharge) + 2,
+                    ymin = -190, ymax = -190) +
+  annotation_custom(bill_McPv0,
+                    xmin = mean(dat_bills$monthlyFixedCharge_incomeWeighted[dat_bills$PV == 0]) - 4,
+                    xmax = mean(dat_bills$monthlyFixedCharge_incomeWeighted[dat_bills$PV == 0]) - 4,
+                    ymin = -190, ymax = -190) +
+  annotation_custom(bill_McPv1,
+                    xmin = mean(dat_bills$monthlyFixedCharge_incomeWeighted[dat_bills$PV == 1]) + 4,
+                    xmax = mean(dat_bills$monthlyFixedCharge_incomeWeighted[dat_bills$PV == 1]) + 4,
+                    ymin = -190, ymax = -190) +
+  coord_cartesian(clip = "off") +
   theme(text = element_text(size = 13))
 ggsave(filename = 'D:/OneDrive - hawaii.edu/Documents/Projects/HECO/Tables and figures/Figures/Residential/02a income-weighted fixed charges.png',
-       dpi = 300, height = 4, width = 6)
-rm(plotdat)
+       dpi = 300, height = 4, width = 9)
+rm(plotdat, bill_currentTariff, bill_McPv0, bill_McPv1)
 
 # plot monthly bills - original block pricing
-p0 <- ggplot(dat_bills, aes(bill_dollars_tariff,
-                            fill = `Has PV?`)) +
-  geom_density(alpha = 0.3) +
+labels0 <- data.frame(x = c(mean(dat_bills$bill_dollars_tariff[dat_bills$PV == 0]) + 35,
+                            mean(dat_bills$bill_dollars_tariff[dat_bills$PV == 1]) - 33),
+                      y = c(0.014, 0.014),
+                      label = paste0('$',
+                                     format(round(c(mean(dat_bills$bill_dollars_tariff[dat_bills$PV == 0]),
+                                                    mean(dat_bills$bill_dollars_tariff[dat_bills$PV == 1])),
+                                                  2),
+                                            nsmall = 2)))
+p0 <- ggplot() +
+  geom_density(data = dat_bills, aes(bill_dollars_tariff,
+                              fill = `Has PV?`),
+               alpha = 0.3) +
   scale_x_continuous(limits = c(0, 400)) +
   geom_vline(xintercept = c(mean(dat_bills$bill_dollars_tariff[dat_bills$PV == 0]),
                             mean(dat_bills$bill_dollars_tariff[dat_bills$PV == 1])),
              linetype = 'longdash', size = 0.8, color = lineColors) +
+  geom_label(data = labels0, aes(x = x, y = y, label = label),
+             color = lineColors, alpha = 0.9) +
   labs(x = 'Bill under current tariff ($/month)',
        y = 'Household bill density') +
   theme(text = element_text(size = 13))
 
 # plot monthly bills - MC pricing and single monthly fixed charge
-p1 <- ggplot(dat_bills, aes(bill_dollars_MC_wFixedCharge,
-                            fill = `Has PV?`)) +
-  geom_density(alpha = 0.3) +
+labels1 <- data.frame(x = c(mean(dat_bills$bill_dollars_MC_wFixedCharge[dat_bills$PV == 0]) + 35,
+                            mean(dat_bills$bill_dollars_MC_wFixedCharge[dat_bills$PV == 1]) - 35),
+                      y = c(0.014, 0.002),
+                      label = paste0('$',
+                                     format(round(c(mean(dat_bills$bill_dollars_MC_wFixedCharge[dat_bills$PV == 0]),
+                                                    mean(dat_bills$bill_dollars_MC_wFixedCharge[dat_bills$PV == 1])),
+                                                  2),
+                                            nsmall = 2)))
+p1 <- ggplot() +
+  geom_density(data = dat_bills, aes(bill_dollars_MC_wFixedCharge,
+                                     fill = `Has PV?`), alpha = 0.3) +
   scale_x_continuous(limits = c(0, 400)) +
   geom_vline(xintercept = c(mean(dat_bills$bill_dollars_MC_wFixedCharge[dat_bills$PV == 0]),
                             mean(dat_bills$bill_dollars_MC_wFixedCharge[dat_bills$PV == 1])),
              linetype = 'longdash', size = 0.8, color = lineColors) +
+  geom_label(data = labels1, aes(x = x, y = y, label = label),
+             color = lineColors, alpha = 0.9) +
   labs(x = 'Bill under MC pricing ($/month)',
        y = 'Household bill density') +
   theme(text = element_text(size = 13))
 
 # plot monthly bills - MC pricing and income-weighted monthly fixed charge
-p2 <- ggplot(dat_bills, aes(bill_dollars_MC_wIncomeWtdFixedCharge,
-                            fill = `Has PV?`)) +
-  geom_density(alpha = 0.3) +
+labels2 <- data.frame(x = c(mean(dat_bills$bill_dollars_MC_wIncomeWtdFixedCharge[dat_bills$PV == 0]) + 35,
+                            mean(dat_bills$bill_dollars_MC_wIncomeWtdFixedCharge[dat_bills$PV == 1]) - 35),
+                      y = c(0.010, 0.001),
+                      label = paste0('$',
+                                     format(round(c(mean(dat_bills$bill_dollars_MC_wIncomeWtdFixedCharge[dat_bills$PV == 0]),
+                                                    mean(dat_bills$bill_dollars_MC_wIncomeWtdFixedCharge[dat_bills$PV == 1])),
+                                                  2),
+                                            nsmall = 2)))
+p2 <- ggplot() +
+  geom_density(data = dat_bills, aes(bill_dollars_MC_wIncomeWtdFixedCharge,
+                                     fill = `Has PV?`), alpha = 0.3) +
   scale_x_continuous(limits = c(0, 400)) +
   geom_vline(xintercept = c(mean(dat_bills$bill_dollars_MC_wIncomeWtdFixedCharge[dat_bills$PV == 0]),
                             mean(dat_bills$bill_dollars_MC_wIncomeWtdFixedCharge[dat_bills$PV == 1])),
              linetype = 'longdash', size = 0.8, color = lineColors) +
+  geom_label(data = labels2, aes(x = x, y = y, label = label),
+             color = lineColors, alpha = 0.9) +
   labs(x = 'Bill under MC pricing and income-weighted fixed charge ($/month)',
        y = 'Household bill density') +
   theme(text = element_text(size = 13))
@@ -152,5 +200,5 @@ plot(g)
 ggsave(g, filename = 'D:/OneDrive - hawaii.edu/Documents/Projects/HECO/Tables and figures/Figures/Residential/02a bill comparison - current tariff - MC pricing - MC pricing income-wtd fixed charge.png',
        dpi = 300, height = 7.5, width = 6)
 
-rm(g, p0, p1, p2)
+rm(g, p0, p1, p2, labels0, labels1, labels2)
 dat_bills$`Has PV?` <- NULL
